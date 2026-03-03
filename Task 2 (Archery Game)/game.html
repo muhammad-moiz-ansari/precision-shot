@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Precision Shot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<link rel="icon" href="sprites/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+  <img id="bg-img" src="sprites/bg-game.png" alt="">
+  <div class="navbar">
+    <div class="target-scores">
+      <img src="sprites/target_scores.png" alt="target scores" style="width: 100%; height: 100%; position: left;">
+    </div>
+    <div class="displayBoard">
+      <div id="timer">Time: 60 s</div>
+      <div id="score">Score: 0</div>
+    </div>
+    <div class="arrowCount">
+      <img id="bagImg" src="sprites/bag1.png" alt="" style="width: 100%; height: 100%; position: left;">
+      <p id="arrowCount" style="width: 200px">10</p>
+    </div>
+  </div>
+  
+  <div id="gameOverMenu">
+    <img id="menu-bg" src="sprites/menu-bg.png" alt="">
+    <h1>Game Over!</h1>
+    <p id="endScore">Score: </p>
+    <button onclick="restartGame()">Restart</button>
+    <button onclick="window.location.href='index.html'">Main Menu</button>
+    <button onclick="exitGame()">Exit</button>
+  </div>
+  
+  <div id="gameArea">
+    <p id="incScore"></p>
+    <div id="powerBorder">
+      <div id="powerBar"></div>
+    </div>
+    <div id="target">
+      <img src="sprites/target.png" alt="" style="width: 100%; height: 100%; position: inherit;">
+    </div>
+    <div id="arrow">
+      <img src="sprites/arrow.png" alt="=======" style="width: 100%; height: 100%; position: inherit;">
+    </div>
+    <div id="bow">
+      <img src="sprites/bow1.png" alt="}" style="width: 100%; height: 100%; position: inherit;">
+    </div>
+  </div>
+
+<script>
+  const buttons = document.getElementsByTagName("button");
+
+  const arrow = document.getElementById("arrow");
+  const target = document.getElementById("target");
+  const bow = document.getElementById("bow");
+  const scoreDisplay = document.getElementById("score");
+  const timeDisplay = document.getElementById("timer");
+  const arrowCountDisplay = document.getElementById("arrowCount");
+  const scoreInc = document.getElementById("incScore");
+  const bagImage = document.getElementById("bagImg");
+  const bowImage = document.querySelector("#bow img");
+
+  const gameArea = document.getElementById("gameArea");
+  const navBar = document.querySelector(".navbar");
+  const bgImg = document.getElementById("bg-img");
+
+  // Game Over Menu
+  const endMenu = document.getElementById("gameOverMenu");
+  const endScore = document.getElementById("endScore");
+
+  const powerBorder = document.getElementById("powerBorder");
+  const powerBar = document.getElementById("powerBar");
+
+
+  ///////////////////
+  //               //
+  //   VARIABLES   //
+  //               //
+  ///////////////////
+
+  // Defaults
+  let defTargetSpeed = 41;
+  let defTHeight = 110;
+  let defArrowSpeed = 16;
+  let defTime = 60;
+  let defArrowCount = 15;
+
+  // Screen Displays
+  let timeLeft = defTime;
+  let score = 0;
+  let arrowCount = defArrowCount;
+
+  // Booleans
+  let gameEnded = false;
+  let tempEndGame = true;
+  let gameOver = false;
+  let arrowMoving = false;
+  let arrowPinned = false;
+  let shootAnimation = false;
+  let reloadAnimation = false;
+
+  let targetDirection = 1;
+  let nextTarget = 50;  // The score where difficulty will increase
+  let stretchVal = 6;
+  let angle, angleRad, dy, dx;
+
+  // Speeds
+  let targetSpeed = defTargetSpeed;
+  let targetMoveTime = 60 - targetSpeed;
+  let arrowSpeed = defArrowSpeed;
+
+  // Intervals
+  let startTimerInterval;
+  let moveInterval;
+  let difficultyInterval;
+
+  // Arrow Positions
+  arrow.style.left = bow.offsetLeft + 40 + "px";
+  let al1 = arrow.offsetLeft;
+  let al2 = al1 - 8;
+  let al3 = al2 - 8;
+  let al4 = al3 - 9;
+  let al5 = al4 - 8;
+  let al6 = al5 - 7;
+
+  
+  // MAIN Function
+  function runGame() {
+    endMenu.style.display = "none";
+    setTimeAndArrows();
+    startTimer();
+    resetArrow();
+    target.style.top = bow.offsetTop - (target.offsetHeight / 2) + "px";
+    moveTarget();
+    increaseDifficulty();
+    checkGameOver();
+    initPowerBar();
+  }
+
+  function endGame() {
+    if (!gameOver) return;
+    //resetArrow();
+    //target.style.top = bow.offsetTop - (target.offsetHeight / 2) + "px";
+    arrowPinned = false;
+    arrowMoving = false;
+    gameEnded = true;
+
+    gameOverMenu();
+  }
+
+  function gameOverMenu() {
+    endMenu.style.display = "flex";
+    if (timeLeft <= 0)
+      endMenu.querySelector("h1").textContent = "Time Over!";
+    else if (arrowCount <= 0)
+      endMenu.querySelector("h1").textContent = "You ran out of arrows!";
+
+    endScore.textContent = "Score: " + score;
+
+    gameArea.classList.add("dimmed");
+    navBar.classList.add("dimmed");
+    bgImg.style.filter = "brightness(0.4)";
+  }
+
+  function restartGame() {
+    // VARIABLES
+    // Screen Displays
+    timeLeft = defTime;
+    score = 0;
+    arrowCount = defArrowCount;
+    // Booleans
+    tempEndGame = true;
+    gameOver = false;
+    arrowMoving = false;
+    arrowPinned = false;
+    shootAnimation = false;
+    reloadAnimation = false;
+    targetDirection = 1;
+    // Speeds
+    targetSpeed = defTargetSpeed;
+    targetMoveTime = 60 - targetSpeed;
+    arrowSpeed = defArrowSpeed;
+
+    // RESET INTERVALS 
+    clearInterval(startTimerInterval);
+    clearInterval(moveInterval);
+    clearInterval(difficultyInterval);
+
+    ++arrowCount;
+    updateArrowCount();
+    scoreDisplay.textContent = "Score: " + score;
+    target.style.height = defTHeight + "px";
+
+    gameArea.classList.remove("dimmed");
+    navBar.classList.remove("dimmed");
+    bgImg.style.filter = "brightness(0.6)";
+    
+    runGame();
+  }
+
+  function exitGame() {
+    window.location.href = "https://www.google.com";
+  }
+
+  function setTimeAndArrows() {
+    timeDisplay.textContent = "Time: " + timeLeft + " s";
+    arrowCountDisplay.textContent = arrowCount;
+  }
+
+  function startTimer() {
+    startTimerInterval = setInterval(() => {
+      if (gameOver) return;
+      if (timeLeft > 0)
+        timeLeft -= 1;
+      else {
+        gameOver = true;
+        endGame();
+      }
+      timeDisplay.textContent = "Time: " + timeLeft + " s";
+    }, 1000);
+  }
+
+  function moveTarget() {
+    moveInterval = setInterval(() => {
+      if (gameOver) return;
+      let extraMargin = 110;
+      let topBorder = 0 + extraMargin;
+      let bottomBorder = window.innerHeight - extraMargin + 75;
+      let targetTop = target.offsetTop;
+      let targetBottom = targetTop + target.offsetHeight;
+
+      if(targetTop <= topBorder)
+        targetDirection = 1;
+      else if (targetBottom >= bottomBorder)
+        targetDirection = -1;
+
+      target.style.top = target.offsetTop + (5 * targetDirection) + "px";
+      if (arrowPinned) {
+        arrow.style.top = arrow.offsetTop + (5 * targetDirection) + "px";
+      }
+    }, targetMoveTime);
+  }
+
+  function updateScore(areaHit) {
+    let scoreIncrement;
+    if (areaHit == 1)
+      scoreIncrement = 5;
+    else if (areaHit == 2)
+      scoreIncrement = 10;
+    else if (areaHit == 3)
+      scoreIncrement = 15;
+    else if (areaHit == 4)
+      scoreIncrement = 30;
+    else if (areaHit == 5)
+      scoreIncrement = 50;
+    else
+      scoreIncrement = 5;
+    
+    score += scoreIncrement;
+    scoreDisplay.textContent = "Score: " + score;
+    scoreInc.textContent = "+ " + scoreIncrement + "pts";
+    scoreInc.style.left = target.offsetLeft - scoreInc.offsetWidth - 30 + "px";
+    scoreInc.style.top = target.offsetTop + "px";
+    scoreInc.classList.remove("pop-animation");
+    void scoreInc.offsetWidth;
+    scoreInc.classList.add("pop-animation");
+  }
+
+  function updateArrowCount() {
+    if (arrowCount > 0) arrowCount--;
+    arrowCountDisplay.textContent = arrowCount;
+
+    if (arrowCount == 2)
+      bagImage.src = "sprites/bag2.png";
+    else if (arrowCount == 1)
+      bagImage.src = "sprites/bag3.png";
+    else if (arrowCount == 0)
+      bagImage.src = "sprites/bag4.png";
+  }
+
+  function increaseDifficulty() {
+    difficultyInterval = setInterval(() => {
+      if (score >= nextTarget) {
+        nextTarget += 50;
+        targetSpeed += 5;
+        console.log(targetSpeed);
+        targetMoveTime = 60 - targetSpeed;
+        clearInterval(moveInterval);
+        moveTarget();
+  
+        target.style.height = target.offsetHeight - 10 + "px";
+      }
+    }, 20);
+  }
+
+  /* Shooting Arrow Click Handled */
+  document.addEventListener("click", () => {
+    if (gameOver || arrowCount <= 0) return;
+
+      if (gameEnded) {
+        gameEnded = false;
+        return;
+      }
+      if (arrowMoving) return;
+
+      // Reloads arrow if already pinned to target
+      if (arrowPinned) {
+        resetArrow();
+        arrowPinned = false;
+        return;
+      }
+  });
+  
+  function checkGameOver() {
+    gameOverInterval = setInterval(() => {
+      let isGameFinished = gameOver || arrowCount <= 0;
+      
+      if (isGameFinished && tempEndGame && arrowMoving == false) {
+        console.log(isGameFinished, tempEndGame, arrowMoving);
+        // wait 2 seconds
+        //scoreInc.style.opacity = 0;
+        gameOver = true;
+        tempEndGame = false;
+        endGame();
+        clearInterval(gameOverInterval);
+      }
+    }, 50);
+  }
+
+  function checkInnerCollision(arrowTip) {
+    let targetTop = target.offsetTop
+    let originalH = 634;
+    let fact = originalH / target.offsetHeight;
+
+    let w1 = targetTop;
+    let wb1 = targetTop + (54 / fact);
+    let bbl1 = targetTop + (115 / fact);
+    let blr1 = targetTop + (182 / fact);
+    let ry1 = targetTop + (249 / fact);
+    let ry2 = targetTop + (385 / fact);
+    let blr2 = targetTop + (451 / fact);
+    let bbl2 = targetTop + (519 / fact);
+    let wb2 = targetTop + (579 / fact);
+    let w2 = targetTop + target.offsetHeight;
+
+    let whiteHit = (arrowTip >= w1 && arrowTip <= wb1) || (arrowTip >= wb2 && arrowTip <= w2);
+    let blackHit = (arrowTip >= wb1 && arrowTip <= bbl1) || (arrowTip >= bbl2 && arrowTip <= wb2);
+    let blueHit = (arrowTip >= bbl1 && arrowTip <= blr1) || (arrowTip >= blr2 && arrowTip <= bbl2);
+    let redHit = (arrowTip >= blr1 && arrowTip <= ry1) || (arrowTip >= ry2 && arrowTip <= blr2);
+    let yellowHit = arrowTip >= ry1 && arrowTip <= ry2;
+
+    if (whiteHit)
+      return 1;
+    else if (blackHit)
+      return 2;
+    else if (blueHit)
+      return 3;
+    else if (redHit)
+      return 4;
+    else if (yellowHit)
+      return 5;
+    else
+      return 6;
+  }
+
+  function resetArrow() {
+    arrowMoving = false;
+    arrowPinned = false;
+    arrow.style.top = bow.offsetTop - (arrow.offsetHeight / 2) + "px";
+    arrow.style.left = bow.offsetLeft + 40 + "px";
+    arrowSpeed = defArrowSpeed;
+    resetPower();
+    reload();
+  }
+
+  /* ANIMATIONS */
+  function reload() {
+    bowImage.src = "sprites/bow1.png";
+    //resetArrow(); 
+    
+    /*
+    reloadAnimation = true;
+    let i = 1;
+    let arrowOffset;
+    reloadInt = setInterval(() => {
+      if (i >= stretchVal) {
+        clearInterval(reloadInt);
+        reloadAnimation = false;
+      }
+      bowImage.src = "sprites/bow" + i + ".png";
+      if (i == 1)
+        arrowOffset = 0;
+      else if (i == 2)
+        arrowOffset = 8;
+      else if (i == 3)
+        arrowOffset = 8;
+      else if (i == 4)
+        arrowOffset = 9;
+      else if (i == 5)
+        arrowOffset = 8;
+      else if (i == 6)
+        arrowOffset = 7;
+      
+      arrow.style.left = arrow.offsetLeft - arrowOffset + "px";
+      i++;
+    }, 25);
+    */
+  }
+
+  function shoot() {
+    shootAnimation = true;
+    let i = stretchVal;
+    let arrowOffset;
+
+    shootInt = setInterval(() => {
+      if (i <= 1) {
+        clearInterval(shootInt);
+        shootAnimation = false;
+      }
+      bowImage.src = "sprites/bow" + i + ".png";
+      if (i == 1)
+        arrowOffset = 0;
+      else if (i == 2)
+        arrowOffset = 8;
+      else if (i == 3)
+        arrowOffset = 8;
+      else if (i == 4)
+        arrowOffset = 9;
+      else if (i == 5)
+        arrowOffset = 8;
+      else if (i == 6)
+        arrowOffset = 7;
+      
+      arrow.style.left = arrow.offsetLeft - arrowOffset + "px";
+      i--;
+    }, 18);
+  }
+
+  ////////////////////////////////////
+  //                                //
+  //    MOUSE TRACKING FUNCTIONS    //
+  //                                //
+  ////////////////////////////////////
+
+  let isDragging = false;
+  let x1, y1, x2, y2, dragDistance;
+
+  document.addEventListener("mousedown", (e) => {
+    if (e.target.tagName === "BUTTON" || e.target.closest("#gameOverMenu")) return;
+    if(!arrowMoving) {
+      isDragging = true;
+      x1 = e.clientX;
+      y1 = e.clientY;
+
+      x2 = x1;
+      y2 = y1; 
+      dragDistance = 0;
+
+      // Reloads arrow if already pinned to target
+      if (arrowPinned) {
+        resetArrow();
+        arrowPinned = false;
+        return;
+      }
+    }
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+
+      if (gameOver || arrowCount <= 0) return;
+
+      if (gameEnded) {
+        gameEnded = false;
+        return;
+      }
+      if (arrowMoving) return;
+
+      if (!dragDistance || dragDistance < 10) {
+        angle = 0;
+        angleRad = 0;
+        setPower(40); // Minimum power for a quick click
+        arrow.style.transform = "rotate(" + angle + "deg)";
+        bow.style.transform = "translateY(-50%) rotate(" + angle + "deg)";
+      }
+      
+      arrowMoving = true;
+      powerBar.style.width = "0px";
+      updateArrowCount();
+      if (!shootAnimation && !reloadAnimation)
+        shoot();
+
+      arrowInterval = setInterval(() => {
+        let arrowTipX = arrow.offsetLeft + arrow.offsetWidth;
+        let arrowTipY = arrow.offsetTop + (arrow.offsetHeight / 2);
+        let targetTop = target.offsetTop;
+        let targetBottom = targetTop + target.offsetHeight;
+        let targetSurface = target.offsetLeft + (target.offsetWidth / 2) - 20;
+        arrow.style.left = arrow.offsetLeft + (Math.cos(angleRad) * 15) + "px";
+        arrow.style.top = arrow.offsetTop + (Math.sin(angleRad) * 15) + "px";
+
+        // Check Collision
+        if (arrowTipX >= targetSurface &&
+            arrowTipX <= targetSurface + 15 &&
+            arrowTipY >= targetTop &&
+            arrowTipY <= targetBottom
+        ) {
+          // Fix arrow tilt offset
+          let aCenterX = arrow.offsetLeft + (arrow.offsetWidth / 2);
+          let aCenterY = arrow.offsetTop + (arrow.offsetHeight / 2);
+
+          // 2. Calculate the Tip's Y position using Sine
+          // Multiply half the width (c side of right triangle) by the Sine of the angle
+          let adjustedArrowTipY = aCenterY + (Math.sin(angleRad) * (arrow.offsetWidth / 2));
+          
+          console.log("Adjusted y: ", adjustedArrowTipY);
+          console.log("Original y: ", arrowTipY);
+
+          let areaHit = checkInnerCollision(adjustedArrowTipY);
+          updateScore(areaHit);
+          arrowMoving = false;
+          arrowPinned = true;
+          resetArrow();
+          clearInterval(arrowInterval);
+        }
+
+        // Arrow out of bounds
+        if (arrow.offsetLeft > window.innerWidth || 
+            arrow.offsetLeft + arrow.offsetWidth < 0 ||
+            arrow.offsetTop < 0 ||
+            arrow.offsetTop > window.innerHeight
+          ) {
+          resetArrow();
+          clearInterval(arrowInterval);
+        }
+      }, arrowSpeed);
+    }
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    x2 = e.clientX;
+    y2 = e.clientY;
+    if (isDragging)
+      updateAngles(e);
+    if (x2 < x1 && isDragging) {
+      dragDistance = Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+
+      //console.log(dragDistance);
+      setPower(dragDistance);
+    }
+  });
+
+  function initPowerBar() {
+    powerBorder.style.top = bow.offsetTop - (bow.offsetHeight / 2) - powerBorder.offsetHeight - 7 + "px";
+    powerBorder.style.left = bow.offsetLeft;
+
+    powerBar.style.width = 0 + "px";
+    powerBar.style.height = powerBorder.offsetHeight - 10 + "px";
+  }
+
+  function resetPower() {
+    powerBar.style.width = "0px";
+    stretchVal = 1;              
+    arrowSpeed = defArrowSpeed;
+    dragDistance = 0;
+  }
+
+  function setPower(dist) {
+    let pwidth;
+    let pdefW = powerBorder.offsetWidth - 10;
+    let arrowLeft = arrow.offsetLeft;
+    let newALeft;
+    if(dist >= 250) {
+      arrowSpeed = defArrowSpeed - 8;
+      stretchVal = 6;
+      pwidth = pdefW;
+      newALeft = al6;
+    }
+    else if (dist >= 200) {
+      arrowSpeed = defArrowSpeed - 6;
+      stretchVal = 5;
+      pwidth = pdefW * 0.7;
+      newALeft = al5;
+    }
+    else if (dist >= 150) {
+      arrowSpeed = defArrowSpeed - 4;
+      stretchVal = 4;
+      pwidth = pdefW * 0.5;
+      newALeft = al4;
+    }
+    else if (dist >= 100) {
+      arrowSpeed = defArrowSpeed - 2;
+      stretchVal = 3;
+      pwidth = pdefW * 0.3;
+      newALeft = al3;
+    }
+    else if (dist >= 50) {
+      arrowSpeed = defArrowSpeed;
+      stretchVal = 2;
+      pwidth = pdefW * 0.17;
+      newALeft = al2;
+    }
+    else {
+      arrowSpeed = defArrowSpeed + 2;
+      stretchVal = 2;
+      pwidth = pdefW * 0.1;
+      newALeft = al2;
+    }
+    powerBar.style.width = pwidth + "px";
+    bowImage.src = "sprites/bow" + stretchVal + ".png";
+    arrow.style.left = newALeft + "px";
+  }
+
+  function updateAngles(e) {
+    let bowRect = bow.getBoundingClientRect();
+    let bowX = bowRect.left + (bowRect.width / 2);
+    let bowY = bowRect.top + (bowRect.height / 2);
+    dx = - e.clientX + x1;
+    dy = - e.clientY + y1;
+    angleRad = Math.atan2(dy, dx);
+    angle = angleRad * (180 / Math.PI);
+    console.log("Angle: " + angle);
+
+    /*
+    if (angle >= -179.99 && angle < -35) {
+      angle = -35;
+    }
+    else  (angle <= 179.99 && angle > 35) {
+      angle = 35;
+    }
+    */
+      
+    //if (Math.abs(angle) <= 35) {
+      arrow.style.transform = "rotate(" + angle + "deg)";
+      bow.style.transform = "translateY(-50%) rotate(" + angle + "deg)";
+    //}
+  }
+
+  runGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Shot Archery</title>
+    <style>
+        /* --- CSS STYLING --- */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #222;
+        }
+
+        #game-container {
+            position: relative;
+            width: 1024px;
+            height: 600px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* Main Menu */
+        #menu-screen {
+            background: url('sprites/bg-main.jpg') no-repeat center center;
+            background-size: cover;
+        }
+
+        #game-screen {
+            background: url('sprites/bg-game.png') no-repeat center center;
+            background-size: cover;
+            display: none; /* Hidden by default */
+        }
+
+        #game-over-screen {
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            color: white;
+            text-align: center;
+        }
+
+        /* --- UI ELEMENTS --- */
+        .logo {
+            width: 300px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: url('sprites/button.png') no-repeat center center;
+            background-size: contain;
+            width: 200px;
+            height: 60px;
+            border: none;
+            color: #3e2723;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.4);
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* HUD (Heads Up Display) */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none; /* Let clicks pass through */
+        }
+
+        .hud-item {
+            background: url('sprites/menu-bg.png');
+            background-size: cover;
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            border: 2px solid #8d6e63;
+        }
+
+        #ammo-display {
+            width: 100px; 
+            height: 150px;
+            background: none;
+            border: none;
+        }
+        
+        #ammo-img {
+            width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5));
+        }
+
+        /* --- GAME OBJECTS --- */
+        #bow-container {
+            position: absolute;
+            left: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100px;
+            height: 200px;
+            z-index: 5;
+        }
+
+        #bow-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .arrow {
+            position: absolute;
+            width: 80px; /* Adjust based on sprite aspect ratio */
+            height: 15px;
+            z-index: 4;
+            display: none; /* Hidden until fired */
+        }
+
+        #target {
+            position: absolute;
+            right: 50px;
+            top: 200px;
+            width: 130px; 
+            height: auto; /* Aspect ratio preserved */
+            z-index: 3;
+        }
+
+        /* Floating Score Text */
+        .float-score {
+            position: absolute;
+            color: #ffd700;
+            font-size: 30px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <div id="menu-screen" class="screen">
+            <img src="sprites/logo.png" alt="Precision Shot" class="logo">
+            <button id="start-btn" class="btn">PLAY</button>
+        </div>
+
+        <div id="game-screen">
+            <div id="hud">
+                <div class="hud-item">Score: <span id="score">0</span></div>
+                <div id="ammo-display">
+                    <img id="ammo-img" src="sprites/bag1.png" alt="Ammo">
+                </div>
+                <div class="hud-item">Time: <span id="timer">60</span>s</div>
+            </div>
+
+            <div id="bow-container">
+                <img id="bow-img" src="sprites/bow1.png" alt="Bow">
+            </div>
+            
+            <img id="arrow" class="arrow" src="sprites/arrow.png" alt="Arrow">
+            
+            <img id="target" src="sprites/target.png" alt="Target">
+        </div>
+
+        <div id="game-over-screen" class="screen">
+            <img src="sprites/logo.png" alt="Logo" style="width: 150px; margin-bottom:20px;">
+            <h1>GAME OVER</h1>
+            <h2>Final Score: <span id="final-score">0</span></h2>
+            <button id="restart-btn" class="btn">RESTART</button>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * PRECISION SHOT - LOGIC
+         * Based on Requirements:
+         * - Modular functions [cite: 20]
+         * - Event handling (click/press) [cite: 3, 14]
+         * - DOM Manipulation [cite: 14]
+         * - Dynamic Score/Difficulty [cite: 53]
+         */
+
+        // --- CONSTANTS & CONFIG ---
+        const GAME_DURATION = 60; // Seconds
+        const TOTAL_AMMO = 15;
+        
+        // Target Pixel Mapping (From Prompt)
+        // Original image height is approx 634px based on the last coordinate.
+        const TARGET_ZONES = [
+            { y: 54,  points: 5,  label: "White" },
+            { y: 115, points: 10, label: "Black" },
+            { y: 182, points: 15, label: "Blue" },
+            { y: 249, points: 30, label: "Red" },
+            { y: 385, points: 50, label: "Gold" }, // Bullseye
+            { y: 451, points: 30, label: "Red" },
+            { y: 519, points: 15, label: "Blue" },
+            { y: 579, points: 10, label: "Black" },
+            { y: 634, points: 5,  label: "White" }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const screens = {
+            menu: document.getElementById('menu-screen'),
+            game: document.getElementById('game-screen'),
+            gameOver: document.getElementById('game-over-screen')
+        };
+        const ui = {
+            score: document.getElementById('score'),
+            timer: document.getElementById('timer'),
+            ammo: document.getElementById('ammo-img'),
+            finalScore: document.getElementById('final-score')
+        };
+        const gameObjects = {
+            bow: document.getElementById('bow-img'),
+            bowContainer: document.getElementById('bow-container'),
+            arrow: document.getElementById('arrow'),
+            target: document.getElementById('target'),
+            container: document.getElementById('game-container')
+        };
+
+        // --- GAME STATE ---
+        let state = {
+            score: 0,
+            timeLeft: GAME_DURATION,
+            isPlaying: false,
+            arrowsLeft: TOTAL_AMMO,
+            isFiring: false, // Prevents spamming while arrow is flying
+            targetDirection: 1, // 1 = down, -1 = up
+            targetSpeed: 2
+        };
+
+        let timers = {
+            gameLoop: null,
+            countdown: null
+        };
+
+        // --- INITIALIZATION ---
+        
+        // Event Listeners [cite: 14]
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', resetGame);
+        
+        // Mouse controls for Bow
+        document.addEventListener('mousedown', startDrawBow);
+        document.addEventListener('mouseup', releaseBow);
+
+        function startGame() {
+            // Reset State [cite: 37]
+            state.score = 0;
+            state.timeLeft = GAME_DURATION;
+            state.arrowsLeft = TOTAL_AMMO;
+            state.isPlaying = true;
+            state.isFiring = false;
+            state.targetSpeed = 2;
+
+            // Update UI
+            updateScoreUI();
+            updateTimerUI();
+            updateAmmoUI();
+
+            // Switch Screens
+            screens.menu.style.display = 'none';
+            screens.gameOver.style.display = 'none';
+            screens.game.style.display = 'block';
+
+            // Start Loops [cite: 25]
+            timers.countdown = setInterval(updateTimer, 1000);
+            timers.gameLoop = requestAnimationFrame(gameLoop);
+        }
+
+        // --- GAME LOOP (MOVEMENT) ---
+        function gameLoop() {
+            if (!state.isPlaying) return;
+
+            moveTarget(); // [cite: 24]
+            moveArrow();
+            
+            timers.gameLoop = requestAnimationFrame(gameLoop);
+        }
+
+        // --- CORE MECHANICS ---
+
+        // 1. Target Movement 
+        function moveTarget() {
+            const target = gameObjects.target;
+            const containerHeight = gameObjects.container.clientHeight;
+            
+            // Get current top position
+            let currentTop = parseInt(target.style.top || 200);
+            
+            // Move
+            currentTop += state.targetSpeed * state.targetDirection;
+
+            // Boundary Check (Bounce)
+            if (currentTop + target.clientHeight > containerHeight - 20) {
+                state.targetDirection = -1; // Go Up
+            } else if (currentTop < 20) {
+                state.targetDirection = 1; // Go Down
+            }
+
+            target.style.top = currentTop + 'px';
+        }
+
+        // 2. Bow Animation logic
+        let drawInterval;
+        let bowFrame = 1;
+
+        function startDrawBow(e) {
+            if (!state.isPlaying || state.isFiring || state.arrowsLeft <= 0) return;
+            
+            // Prevent clicking UI from firing
+            if(e.target.tagName === 'BUTTON') return;
+
+            bowFrame = 1;
+            clearInterval(drawInterval);
+            
+            // Animate Bow 1 -> 6
+            drawInterval = setInterval(() => {
+                if (bowFrame < 6) {
+                    bowFrame++;
+                    gameObjects.bow.src = `sprites/bow${bowFrame}.png`;
+                } else {
+                    clearInterval(drawInterval);
+                }
+            }, 50); // Speed of draw
+        }
+
+        function releaseBow(e) {
+            if (!state.isPlaying || state.isFiring || state.arrowsLeft <= 0 || bowFrame < 2) return;
+            if(e.target.tagName === 'BUTTON') return;
+
+            clearInterval(drawInterval);
+            fireArrow();
+            
+            // Reset Bow visual instantly or after a small delay
+            setTimeout(() => {
+                gameObjects.bow.src = `sprites/bow1.png`;
+            }, 200);
+        }
+
+        // 3. Shooting Logic [cite: 3]
+        function fireArrow() {
+            state.isFiring = true;
+            state.arrowsLeft--;
+            updateAmmoUI();
+
+            // Position Arrow at Bow
+            const bowRect = gameObjects.bowContainer.getBoundingClientRect();
+            const containerRect = gameObjects.container.getBoundingClientRect();
+
+            // Calculate relative position inside container
+            const startX = (bowRect.right - containerRect.left) - 20;
+            const startY = (bowRect.top - containerRect.top) + (bowRect.height / 2);
+
+            gameObjects.arrow.style.left = startX + 'px';
+            gameObjects.arrow.style.top = startY + 'px';
+            gameObjects.arrow.style.display = 'block';
+        }
+
+        function moveArrow() {
+            if (!state.isFiring) return;
+
+            const arrow = gameObjects.arrow;
+            let currentLeft = parseFloat(arrow.style.left);
+            
+            // Arrow Speed
+            const arrowSpeed = 15;
+            currentLeft += arrowSpeed;
+            arrow.style.left = currentLeft + 'px';
+
+            // Check Collision [cite: 6]
+            if (checkCollision()) {
+                handleHit();
+                resetArrow();
+            } 
+            // Check Miss (off screen)
+            else if (currentLeft > gameObjects.container.clientWidth) {
+                resetArrow();
+                checkAmmoStatus();
+            }
+        }
+
+        // 4. Collision Detection & Scoring
+        function checkCollision() {
+            const arrowRect = gameObjects.arrow.getBoundingClientRect();
+            const targetRect = gameObjects.target.getBoundingClientRect();
+
+            // Simple Box Intersection
+            return !(arrowRect.right < targetRect.left || 
+                     arrowRect.left > targetRect.right || 
+                     arrowRect.bottom < targetRect.top || 
+                     arrowRect.top > targetRect.bottom);
+        }
+
+        function handleHit() {
+            // [cite: 5] Score increases when hit
+            const arrowRect = gameObjects.arrow.getBoundingClientRect();
+            const targetRect = gameObjects.target.getBoundingClientRect();
+
+            // Calculate where we hit relative to the top of the target image
+            // We use the arrow's center Y against the target's top Y
+            const hitY = (arrowRect.top + (arrowRect.height / 2)) - targetRect.top;
+            
+            // We must scale the hitY because the target image might be resized by CSS
+            // The original image map (0-634px) needs to be ratioed to current DOM height
+            const scaleRatio = 634 / targetRect.height; 
+            const scaledHitY = hitY * scaleRatio;
+
+            // Determine Score based on Zones
+            let points = 0;
+            // Iterate through zones to find which one we hit
+            // Zones are sorted by Y coordinate. Find the first zone limit that is > our hit.
+            for (let zone of TARGET_ZONES) {
+                if (scaledHitY <= zone.y) {
+                    points = zone.points;
+                    break;
+                }
+            }
+            if (points === 0) points = 5; // Fallback for very bottom edge
+
+            updateScore(points); // [cite: 26]
+            increaseDifficulty(); // [cite: 28]
+            checkAmmoStatus();
+        }
+
+        function updateScore(points) {
+            state.score += points;
+            updateScoreUI();
+            showFloatingText(points);
+        }
+
+        function increaseDifficulty() {
+            // [cite: 53] Increase difficulty (speed) based on score
+            if(state.score > 100) state.targetSpeed = 3;
+            if(state.score > 250) state.targetSpeed = 5;
+            if(state.score > 500) state.targetSpeed = 8;
+        }
+
+        // --- HELPER FUNCTIONS ---
+
+        function updateAmmoUI() {
+            // Logic: Bag 1 = Full (3), Bag 4 = Empty (0)
+            // arrowsLeft 3 -> bag1
+            // arrowsLeft 2 -> bag2
+            // arrowsLeft 1 -> bag3
+            // arrowsLeft 0 -> bag4
+            let bagIndex = 4 - state.arrowsLeft; 
+            if(bagIndex < 1) bagIndex = 1;
+            if(bagIndex > 4) bagIndex = 4;
+            
+            // Note: prompt description said "bag4 to bag1 are bag with 3,2,1,0" 
+            // BUT file list says bag1 is full. We use file list logic here.
+            // If file list logic: bag1=3, bag2=2, bag3=1, bag4=0
+            let spriteIndex = 1;
+            if(state.arrowsLeft === 3) spriteIndex = 1;
+            else if(state.arrowsLeft === 2) spriteIndex = 2;
+            else if(state.arrowsLeft === 1) spriteIndex = 3;
+            else spriteIndex = 4;
+
+            ui.ammo.src = `sprites/bag${spriteIndex}.png`;
+        }
+
+        function resetArrow() {
+            state.isFiring = false;
+            gameObjects.arrow.style.display = 'none';
+            gameObjects.arrow.style.left = '50px'; // Reset position
+        }
+
+        function checkAmmoStatus() {
+            // Check if game over by ammo
+            if (state.arrowsLeft <= 0) {
+                setTimeout(endGame, 1000);
+            }
+        }
+
+        function updateTimer() { // [cite: 25]
+            state.timeLeft--;
+            updateTimerUI();
+
+            if (state.timeLeft <= 0) {
+                endGame(); // [cite: 46]
+            }
+        }
+
+        function updateTimerUI() {
+            ui.timer.textContent = state.timeLeft;
+            if(state.timeLeft <= 10) ui.timer.style.color = 'red';
+            else ui.timer.style.color = 'white';
+        }
+
+        function updateScoreUI() {
+            ui.score.innerText = state.score;
+        }
+
+        function showFloatingText(points) {
+            const arrowRect = gameObjects.arrow.getBoundingClientRect();
+            const text = document.createElement('div');
+            text.className = 'float-score';
+            text.innerText = `+${points}`;
+            text.style.left = arrowRect.left + 'px';
+            text.style.top = arrowRect.top + 'px';
+            document.body.appendChild(text);
+
+            setTimeout(() => {
+                text.remove();
+            }, 1000);
+        }
+
+        function endGame() { // [cite: 42]
+            state.isPlaying = false;
+            clearInterval(timers.countdown);
+            cancelAnimationFrame(timers.gameLoop);
+            
+            ui.finalScore.innerText = state.score;
+            screens.game.style.display = 'none';
+            screens.gameOver.style.display = 'flex'; // [cite: 50]
+        }
+
+        function resetGame() { // [cite: 52]
+            screens.gameOver.style.display = 'none';
+            startGame();
+        }
+
+    </script>
+</body>
+</html>

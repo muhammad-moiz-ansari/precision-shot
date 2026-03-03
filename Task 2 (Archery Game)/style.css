@@ -1,0 +1,271 @@
+:root {
+    --bg-color: skyblue;
+    --cream-color: antiquewhite;
+    --btn-color: rgb(128, 73, 39);
+    --hover-color: rgb(153, 89, 49);
+  }
+
+  body {
+    margin: 0;
+    background: rgba(201, 184, 162, 0.634);
+    font-family: 'Cinzel', serif;
+    user-select: none;
+  }
+
+  #gameOverMenu h1, #main-menu h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: 48px;
+    
+    color: #ce9e02e2;
+    
+    /* The Dark "Outline" and Shadow */
+    /* This creates a hard dark brown stroke around the letters */
+    text-shadow: 
+        -2px -2px 0 #3e2723,  
+        2px -2px 0 #3e2723,
+        -2px  2px 0 #3e2723,
+        2px  2px 0 #3e2723,
+        0px  5px 5px rgba(0,0,0,0.5); /* Soft drop shadow below */
+
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  #gameOverMenu, #main-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 50px 70px;
+    border-radius: 10px;
+    z-index: 100;
+  }
+
+  #gameOverMenu h1, #main-menu h1 {
+    text-align: center; 
+    margin: 15px;
+    margin-bottom: 0px;
+  }
+
+  #gameOverMenu p {
+    color: var(--cream-color);
+    font-size: 20px;
+  }
+
+  #menu-logo {
+    width: 230px;
+    height: 230px;
+    object-fit: cover;
+    margin-bottom: 20px;
+  }
+
+  #main-menu img:not(#menu-bg), #main-menu button,
+  #gameOverMenu img:not(#menu-bg), #gameOverMenu button, #gameOverMenu h1, #gameOverMenu p {
+    position: relative;
+    z-index: 1;
+  }
+
+  #menu-bg, #bg-img {
+    position: absolute;
+    z-index: 0;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+  }
+
+  #bg-img{
+    object-fit: cover;
+    filter: brightness(0.6);
+    transition: filter 0.3s ease;
+  }
+
+  #bg-main {
+    object-fit: cover;
+    filter: brightness(0.4);
+  }
+
+  .dimmed {
+    filter: brightness(0.5);
+    pointer-events: none;
+    transition: filter 0.3s ease;
+  }
+
+  button {
+    font-family: 'Cinzel', serif;
+    display: inline-block;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    background-color: var(--btn-color);
+    padding: 13px 25px;
+    width: 160px;
+    font-size: 17px;
+
+    background-image: url("sprites/button.png");
+    background-size: 100% 100%;
+    background-color: transparent;
+    border: none;
+    background-repeat: no-repeat;
+
+    transition: all 0.3s ease;
+  }
+
+  button:hover {
+    filter: brightness(1.2);
+    color:rgb(214, 214, 214);
+    transform: translateY(-3px);
+    box-shadow: 0 3px 4px 3px #180e009b;
+    cursor: pointer;
+  }  
+  
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .target-scores {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 170px;
+    height: 130px;
+  }
+
+  .arrowCount {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 100px;
+    height: 60px;
+    
+    font-size: 20px;
+    background-color: var(--cream-color);
+    border-radius: 10px;
+    padding: 8px;
+    box-shadow: 0 4px 4px 2.5px rgba(0, 0, 0, 0.299);
+  }
+
+  .displayBoard {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+    position: absolute;
+    width: 100%;
+    z-index: 10;    
+  }
+
+  #timer {
+    font-size: 24px;
+    background: white;
+    padding: 5px 15px;
+    border-radius: 15px;
+    box-shadow: 0 1px 4px 2.5px rgba(0, 0, 0, 0.299);
+  }
+
+  #score {
+    font-size: 24px;
+    background: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    box-shadow: 0 1px 4px 2.5px rgba(0, 0, 0, 0.299);
+  }
+
+  #incScore {
+    position: absolute;
+    font-size: 24px;
+    font-weight: 600;
+    padding: 0px;
+    margin: 10px;
+    transition: all 0.5s ease-in-out;
+    opacity: 0;
+  }
+
+  .pop-animation {
+    animation: disappear 1s ease-out forwards;
+  }
+
+  @keyframes disappear {
+    0% { opacity: 1; transform: translateY(0px); }
+    100% { opacity: 0; transform: translateY(-25px); }
+  }
+
+  #gameArea {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #bow {
+    position: absolute;
+    top: 60%;
+    left: 25px;
+    font-size: 104px;
+    color: rgb(105, 71, 34);
+    width: 73px;
+    height: 130px;
+    transform: translateY(-50%);  /* To bring bow's center equal to arrow's height */
+  }
+
+  #arrow {
+    position: absolute;
+    top: 55%;
+    left: 64px;
+    width: 91px;
+    height: 9px;
+    display: block;
+  }
+
+  #target {
+    position: absolute;
+    top: 48%;/*287px;*/
+    right: 50px;
+    width: 50px;
+    height: 110px;
+    border-radius: 50%;
+    background-color: white;
+  }  
+
+  #powerBorder {
+    position: absolute;
+    top: 40%;
+    left: 25px;
+
+    background-color: rgb(83, 83, 83);
+    width: 90px;
+    height: 22px;
+    display: block;
+    border: 5px groove rgb(104, 104, 104);
+    border-style: groove;
+  }
+
+  #powerBar {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+
+    background-color: rgb(117, 198, 83);
+    width: 0px;
+    height: 22px;
+    display: block;
+    transition: all 0.2s linear;
+  }

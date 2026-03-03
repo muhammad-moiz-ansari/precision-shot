@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Precision Shot</title>
+    <link rel="icon" href="sprites/favicon.png">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        #main-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: url('sprites/bg-main.jpg') no-repeat center/cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #logo {
+            width: 400px;
+            height: auto;
+        }
+        .button {
+            background: url('sprites/button.png') no-repeat center/cover;
+            width: 200px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: url('sprites/bg-game.png') no-repeat center/cover;
+            display: none;
+        }
+        #bow {
+            position: absolute;
+            left: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 200px;
+            width: auto;
+            cursor: pointer;
+        }
+        #arrow {
+            position: absolute;
+            left: 200px; /* Adjusted to overlap with bow */
+            top: 50%;
+            transform: translateY(-50%);
+            height: 50px;
+            width: auto;
+        }
+        #target {
+            position: absolute;
+            right: 50px;
+            top: 0;
+            height: 300px;
+            width: auto;
+        }
+        #quiver {
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            height: 100px;
+            width: auto;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: white;
+        }
+        #time {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: white;
+        }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: url('sprites/menu-bg.png') no-repeat center/cover;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            font-size: 30px;
+            display: none;
+            width: 300px;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-menu">
+        <img id="logo" src="sprites/logo.png" alt="Precision Shot">
+        <div class="button" id="start-button">Start</div>
+    </div>
+    <div id="game-container">
+        <img id="bow" src="sprites/bow1.png">
+        <img id="arrow" src="sprites/arrow.png">
+        <img id="target" src="sprites/target.png">
+        <img id="quiver" src="sprites/bag1.png">
+        <div id="score">Score: 0</div>
+        <div id="time">Time: 60</div>
+        <div id="game-over">
+            Game Over!<br>Score: 0
+            <div class="button" id="restart-button">Restart</div>
+        </div>
+    </div>
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const mainMenu = document.getElementById('main-menu');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const bow = document.getElementById('bow');
+        const arrow = document.getElementById('arrow');
+        const target = document.getElementById('target');
+        const quiver = document.getElementById('quiver');
+        const scoreDisplay = document.getElementById('score');
+        const timeDisplay = document.getElementById('time');
+        const gameOverDisplay = document.getElementById('game-over');
+
+        let score = 0;
+        let timeLeft = 60;
+        let arrows = 15;
+        let gameOver = false;
+        let isShooting = false;
+        let arrowMoving = false;
+        let timerInterval;
+        let targetInterval;
+        let speed = 2;
+        let direction = 1;
+        const initialArrowLeft = arrow.style.left;
+        const arrowSpeed = 5;
+        const originalHeight = 634;
+        const centerOriginal = 317;
+        const rYellowOriginal = 68;
+        const rRedOriginal = 135;
+        const rBlueOriginal = 202;
+        const rBlackOriginal = 263;
+        const rWhiteOriginal = 317;
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', restartGame);
+        gameContainer.addEventListener('click', handleClick);
+
+        function handleClick(event) {
+            if (gameOver || isShooting || arrows <= 0) return;
+            // Distinguish between target clicks, background clicks, and bow clicks using event object
+            if (event.target.id === 'bow') {
+                shoot();
+            } else if (event.target.id === 'target') {
+                // Ignore target clicks to prevent unintended behavior
+                return;
+            } else {
+                // Ignore background clicks
+                return;
+            }
+        }
+
+        function startGame() {
+            mainMenu.style.display = 'none';
+            gameContainer.style.display = 'block';
+            initGame();
+        }
+
+        function restartGame() {
+            gameOverDisplay.style.display = 'none';
+            initGame();
+        }
+
+        function initGame() {
+            score = 0;
+            timeLeft = 60;
+            arrows = 15;
+            gameOver = false;
+            isShooting = false;
+            arrowMoving = false;
+            speed = 2;
+            direction = 1;
+            updateScore(0);
+            updateTimerDisplay();
+            updateQuiver();
+            bow.src = 'sprites/bow1.png';
+            arrow.style.left = initialArrowLeft;
+            target.style.top = '0px';
+            target.style.height = '300px';
+            startTimer();
+            moveTarget();
+            targetInterval = setInterval(moveTarget, 20);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft === 0) {
+                    triggerGameOver();
+                }
+            }, 1000);
+        }
+
+        function updateScore(points) {
+            score += points;
+            scoreDisplay.innerText = `Score: ${score}`;
+            if (score % 50 === 0 && score > 0) {
+                increaseDifficulty();
+            }
+        }
+
+        function moveTarget() {
+            let top = parseFloat(target.style.top) || 0;
+            top += speed * direction;
+            const containerHeight = gameContainer.clientHeight;
+            const targetHeight = target.clientHeight;
+            if (top <= 0 || top >= containerHeight - targetHeight) {
+                direction = -direction;
+            }
+            target.style.top = `${top}px`;
+        }
+
+        function increaseDifficulty() {
+            speed += 0.5;
+            let currentHeight = parseFloat(target.style.height) || 300;
+            let newHeight = currentHeight - 20;
+            if (newHeight > 100) {
+                target.style.height = `${newHeight}px`;
+                target.style.width = 'auto';
+            }
+        }
+
+        function updateQuiver() {
+            if (arrows > 10) {
+                quiver.src = 'sprites/bag1.png';
+            } else if (arrows > 5) {
+                quiver.src = 'sprites/bag2.png';
+            } else if (arrows > 0) {
+                quiver.src = 'sprites/bag3.png';
+            } else {
+                quiver.src = 'sprites/bag4.png';
+            }
+            if (arrows === 0) {
+                triggerGameOver();
+            }
+        }
+
+        function shoot() {
+            isShooting = true;
+            let frame = 1;
+            const animInterval = setInterval(() => {
+                frame++;
+                bow.src = `sprites/bow${frame}.png`;
+                if (frame === 6) {
+                    clearInterval(animInterval);
+                    releaseArrow();
+                }
+            }, 100);
+        }
+
+        function releaseArrow() {
+            arrows--;
+            updateQuiver();
+            arrowMoving = true;
+            requestAnimationFrame(moveArrow);
+        }
+
+        function moveArrow() {
+            if (!arrowMoving) return;
+            let left = parseFloat(arrow.style.left) + arrowSpeed;
+            arrow.style.left = `${left}px`;
+            const arrowRect = arrow.getBoundingClientRect();
+            const targetRect = target.getBoundingClientRect();
+            // Check if arrow tip hits target
+            if (arrowRect.right >= targetRect.left &&
+                arrowRect.right <= targetRect.left + 20 &&
+                arrowRect.bottom >= targetRect.top &&
+                arrowRect.top <= targetRect.bottom) {
+                const relativeY = (arrowRect.top + arrowRect.height / 2) - targetRect.top;
+                const points = getScore(relativeY);
+                updateScore(points);
+                resetArrow();
+                arrowMoving = false;
+                isShooting = false;
+            } else if (left > window.innerWidth) {
+                resetArrow();
+                arrowMoving = false;
+                isShooting = false;
+            } else {
+                requestAnimationFrame(moveArrow);
+            }
+        }
+
+        function getScore(relativeY) {
+            const scale = target.clientHeight / originalHeight;
+            const center = scale * centerOriginal;
+            const dist = Math.abs(relativeY - center);
+            const rYellow = scale * rYellowOriginal;
+            const rRed = scale * rRedOriginal;
+            const rBlue = scale * rBlueOriginal;
+            const rBlack = scale * rBlackOriginal;
+            const rWhite = scale * rWhiteOriginal;
+            if (dist <= rYellow) return 50;
+            if (dist <= rRed) return 30;
+            if (dist <= rBlue) return 15;
+            if (dist <= rBlack) return 10;
+            if (dist <= rWhite) return 5;
+            return 0;
+        }
+
+        function resetArrow() {
+            arrow.style.left = initialArrowLeft;
+            bow.src = 'sprites/bow1.png';
+        }
+
+        function updateTimerDisplay() {
+            timeDisplay.innerText = `Time: ${timeLeft}`;
+        }
+
+        function triggerGameOver() {
+            if (gameOver) return;
+            gameOver = true;
+            clearInterval(timerInterval);
+            clearInterval(targetInterval);
+            arrowMoving = false;
+            isShooting = false;
+            gameOverDisplay.innerHTML = `Game Over!<br>Score: ${score}<div class="button" id="restart-button">Restart</div>`;
+            gameOverDisplay.style.display = 'block';
+            restartButton.addEventListener('click', restartGame); // Re-attach if needed
+        }
+    </script>
+</body>
+</html>

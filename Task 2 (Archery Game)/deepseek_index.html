@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Shot - Archery Game</title>
+    <link rel="icon" href="sprites/favicon.png" type="image/png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background-color: #111;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Background layers */
+        #main-menu, #game-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        #main-menu {
+            background-image: url('sprites/bg-main.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #game-screen {
+            background-image: url('sprites/bg-game.png');
+            background-size: cover;
+            background-position: center;
+            display: none;
+        }
+
+        /* Logo */
+        #logo {
+            width: 500px;
+            height: 200px;
+            background-image: url('sprites/logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            margin-bottom: 40px;
+        }
+
+        /* Buttons */
+        .menu-btn {
+            width: 250px;
+            height: 70px;
+            background-image: url('sprites/button.png');
+            background-size: 100% 100%;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            margin: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+        }
+
+        .menu-btn:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        .menu-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Game UI elements */
+        #bow {
+            position: absolute;
+            bottom: 50px;
+            left: 100px;
+            width: 120px;
+            height: 120px;
+            background-image: url('sprites/bow1.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            transform-origin: 30% 50%;
+            z-index: 5;
+        }
+
+        #arrow {
+            position: absolute;
+            width: 60px;
+            height: 10px;
+            background-image: url('sprites/arrow.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 4;
+            transform-origin: 0% 50%;
+            display: none;
+        }
+
+        #target {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background-image: url('sprites/target.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 3;
+            transition: transform 0.1s;
+        }
+
+        #quiver {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 120px;
+            height: 120px;
+            background-image: url('sprites/bag1.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 6;
+        }
+
+        /* UI Panels */
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 6;
+            border: 2px solid #8B4513;
+        }
+
+        #score-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 6;
+            border: 2px solid #8B4513;
+        }
+
+        .ui-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #8B4513;
+            padding-bottom: 5px;
+        }
+
+        .ui-value {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            color: #fff;
+        }
+
+        .ui-label {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-over h1 {
+            font-size: 48px;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        #final-score {
+            font-size: 72px;
+            color: #fff;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 400px;
+            z-index: 6;
+            border: 1px solid #8B4513;
+        }
+
+        #instructions h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        #instructions p {
+            margin-bottom: 5px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .highlight {
+            color: #FFD700;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Main Menu -->
+        <div id="main-menu">
+            <div id="logo"></div>
+            <button id="start-btn" class="menu-btn">START GAME</button>
+            <button id="instructions-btn" class="menu-btn">INSTRUCTIONS</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen">
+            <!-- Game Elements -->
+            <div id="bow"></div>
+            <div id="arrow"></div>
+            <div id="target"></div>
+            <div id="quiver"></div>
+
+            <!-- UI Elements -->
+            <div id="ui-panel">
+                <div class="ui-title">TIME</div>
+                <div id="timer" class="ui-value">60</div>
+                <div class="ui-title">ARROWS LEFT</div>
+                <div id="arrow-count" class="ui-value">15</div>
+            </div>
+
+            <div id="score-panel">
+                <div class="ui-title">SCORE</div>
+                <div id="score" class="ui-value">0</div>
+                <div class="ui-title">HIGH SCORE</div>
+                <div id="high-score" class="ui-value">0</div>
+            </div>
+
+            <!-- Instructions Panel -->
+            <div id="instructions">
+                <h3>HOW TO PLAY</h3>
+                <p>1. <span class="highlight">CLICK AND HOLD</span> to draw the bow</p>
+                <p>2. <span class="highlight">RELEASE</span> to shoot the arrow</p>
+                <p>3. Hit the moving target to score points</p>
+                <p>4. Bullseye (Gold): <span class="highlight">50 pts</span></p>
+                <p>5. Red Ring: <span class="highlight">30 pts</span></p>
+                <p>6. Blue Ring: <span class="highlight">15 pts</span></p>
+                <p>7. Black Ring: <span class="highlight">10 pts</span></p>
+                <p>8. White Ring: <span class="highlight">5 pts</span></p>
+                <p>9. You have <span class="highlight">15 arrows</span> and <span class="highlight">60 seconds</span></p>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over">
+            <h1>GAME OVER</h1>
+            <div class="ui-title">FINAL SCORE</div>
+            <div id="final-score">0</div>
+            <button id="restart-btn" class="menu-btn">PLAY AGAIN</button>
+            <button id="menu-btn" class="menu-btn">MAIN MENU</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== GAME CONSTANTS AND VARIABLES ==========
+        const GAME_TIME = 60; // seconds
+        const MAX_ARROWS = 15;
+        
+        // Target ring boundaries (from PDF instructions)
+        const TARGET_RINGS = {
+            GOLD: { min: 0, max: 68, score: 50 },    // 0 to 68px from center
+            RED: { min: 68, max: 135, score: 30 },   // 68 to 135px from center
+            BLUE: { min: 135, max: 202, score: 15 }, // 135 to 202px from center
+            BLACK: { min: 202, max: 263, score: 10 }, // 202 to 263px from center
+            WHITE: { min: 263, max: 317, score: 5 }  // 263 to 317px from center
+        };
+        
+        // Target dimensions
+        const TARGET_SIZE = 200; // px
+        const TARGET_RADIUS = TARGET_SIZE / 2;
+        
+        // Game state variables
+        let gameState = {
+            score: 0,
+            highScore: localStorage.getItem('archeryHighScore') || 0,
+            timeLeft: GAME_TIME,
+            arrowsLeft: MAX_ARROWS,
+            gameActive: false,
+            gameOver: false,
+            bowDrawn: false,
+            drawStartTime: 0,
+            drawPower: 0,
+            targetX: 0,
+            targetY: 0,
+            targetSpeedX: 2,
+            targetSpeedY: 1.5,
+            arrowInFlight: false,
+            arrowX: 0,
+            arrowY: 0,
+            arrowSpeed: 0,
+            arrowAngle: 0
+        };
+        
+        // DOM Elements
+        const mainMenu = document.getElementById('main-menu');
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const instructionsBtn = document.getElementById('instructions-btn');
+        
+        const bow = document.getElementById('bow');
+        const arrow = document.getElementById('arrow');
+        const target = document.getElementById('target');
+        const quiver = document.getElementById('quiver');
+        
+        const timerDisplay = document.getElementById('timer');
+        const arrowCountDisplay = document.getElementById('arrow-count');
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('high-score');
+        const finalScoreDisplay = document.getElementById('final-score');
+        
+        // ========== GAME INITIALIZATION ==========
+        function initGame() {
+            // Set high score display
+            highScoreDisplay.textContent = gameState.highScore;
+            
+            // Set up event listeners
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', startGame);
+            menuBtn.addEventListener('click', showMainMenu);
+            instructionsBtn.addEventListener('click', () => {
+                alert("HOW TO PLAY:\n\n1. CLICK AND HOLD to draw the bow\n2. RELEASE to shoot the arrow\n3. Hit the moving target to score points\n4. Scoring:\n   - Bullseye (Gold): 50 pts\n   - Red Ring: 30 pts\n   - Blue Ring: 15 pts\n   - Black Ring: 10 pts\n   - White Ring: 5 pts\n5. You have 15 arrows and 60 seconds");
+            });
+            
+            // Set up game control events
+            gameScreen.addEventListener('mousedown', startDraw);
+            gameScreen.addEventListener('mouseup', releaseArrow);
+            gameScreen.addEventListener('mouseleave', cancelDraw);
+            
+            // Initialize target position
+            resetTarget();
+        }
+        
+        // ========== GAME FLOW FUNCTIONS ==========
+        function startGame() {
+            // Reset game state
+            gameState.score = 0;
+            gameState.timeLeft = GAME_TIME;
+            gameState.arrowsLeft = MAX_ARROWS;
+            gameState.gameActive = true;
+            gameState.gameOver = false;
+            gameState.bowDrawn = false;
+            gameState.drawPower = 0;
+            gameState.arrowInFlight = false;
+            
+            // Update displays
+            scoreDisplay.textContent = gameState.score;
+            timerDisplay.textContent = gameState.timeLeft;
+            arrowCountDisplay.textContent = gameState.arrowsLeft;
+            updateQuiver();
+            
+            // Show game screen, hide others
+            mainMenu.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            
+            // Reset bow and arrow
+            bow.style.backgroundImage = "url('sprites/bow1.png')";
+            arrow.style.display = 'none';
+            
+            // Start game loop
+            resetTarget();
+            startTimer();
+            moveTarget();
+            
+            console.log("Game started!");
+        }
+        
+        function endGame() {
+            gameState.gameActive = false;
+            gameState.gameOver = true;
+            
+            // Update high score if needed
+            if (gameState.score > gameState.highScore) {
+                gameState.highScore = gameState.score;
+                localStorage.setItem('archeryHighScore', gameState.highScore);
+                highScoreDisplay.textContent = gameState.highScore;
+            }
+            
+            // Show final score
+            finalScoreDisplay.textContent = gameState.score;
+            
+            // Show game over screen
+            gameOverScreen.style.display = 'flex';
+            gameScreen.style.display = 'none';
+            
+            console.log("Game over! Final score:", gameState.score);
+        }
+        
+        function showMainMenu() {
+            gameState.gameActive = false;
+            mainMenu.style.display = 'flex';
+            gameScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+        }
+        
+        // ========== TIMER FUNCTIONS ==========
+        function startTimer() {
+            // Clear any existing timer
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            // Start countdown
+            gameState.timerInterval = setInterval(() => {
+                if (!gameState.gameActive) {
+                    clearInterval(gameState.timerInterval);
+                    return;
+                }
+                
+                gameState.timeLeft--;
+                timerDisplay.textContent = gameState.timeLeft;
+                
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    endGame();
+                }
+                
+                // Increase difficulty as time runs out
+                if (gameState.timeLeft === 30) {
+                    increaseDifficulty();
+                } else if (gameState.timeLeft === 15) {
+                    increaseDifficulty();
+                }
+            }, 1000);
+        }
+        
+        // ========== BOW AND ARROW FUNCTIONS ==========
+        function startDraw(e) {
+            if (!gameState.gameActive || gameState.arrowInFlight || gameState.arrowsLeft <= 0) {
+                return;
+            }
+            
+            gameState.bowDrawn = true;
+            gameState.drawStartTime = Date.now();
+            
+            // Start bow animation
+            let frame = 1;
+            const drawInterval = setInterval(() => {
+                if (!gameState.bowDrawn) {
+                    clearInterval(drawInterval);
+                    return;
+                }
+                
+                frame++;
+                if (frame > 6) frame = 6;
+                
+                bow.style.backgroundImage = `url('sprites/bow${frame}.png')`;
+                
+                // Calculate draw power (0 to 1)
+                const drawTime = Date.now() - gameState.drawStartTime;
+                gameState.drawPower = Math.min(drawTime / 1000, 1);
+                
+                // Position arrow at bow
+                positionArrowAtBow();
+                
+            }, 100);
+            
+            gameState.drawInterval = drawInterval;
+        }
+        
+        function positionArrowAtBow() {
+            const bowRect = bow.getBoundingClientRect();
+            const gameRect = gameScreen.getBoundingClientRect();
+            
+            // Position arrow at bow
+            gameState.arrowX = bowRect.left + bowRect.width * 0.7 - gameRect.left;
+            gameState.arrowY = bowRect.top + bowRect.height * 0.5 - gameRect.top;
+            
+            arrow.style.left = `${gameState.arrowX}px`;
+            arrow.style.top = `${gameState.arrowY}px`;
+            arrow.style.display = 'block';
+            
+            // Calculate angle from bow to mouse
+            const mouseX = gameState.lastMouseX || gameState.arrowX + 100;
+            const mouseY = gameState.lastMouseY || gameState.arrowY;
+            
+            const deltaX = mouseX - gameState.arrowX;
+            const deltaY = mouseY - gameState.arrowY;
+            gameState.arrowAngle = Math.atan2(deltaY, deltaX);
+            
+            arrow.style.transform = `rotate(${gameState.arrowAngle}rad)`;
+        }
+        
+        function releaseArrow() {
+            if (!gameState.bowDrawn || !gameState.gameActive || gameState.arrowsLeft <= 0) {
+                return;
+            }
+            
+            gameState.bowDrawn = false;
+            gameState.arrowInFlight = true;
+            gameState.arrowsLeft--;
+            
+            // Update arrow count display
+            arrowCountDisplay.textContent = gameState.arrowsLeft;
+            updateQuiver();
+            
+            // Calculate arrow speed based on draw power
+            gameState.arrowSpeed = 10 + gameState.drawPower * 15;
+            
+            // Reset bow to resting state
+            bow.style.backgroundImage = "url('sprites/bow1.png')";
+            
+            // Clear draw interval
+            if (gameState.drawInterval) {
+                clearInterval(gameState.drawInterval);
+            }
+            
+            // Start arrow flight
+            moveArrow();
+            
+            // Check if out of arrows
+            if (gameState.arrowsLeft <= 0) {
+                setTimeout(() => {
+                    if (gameState.gameActive && !gameState.arrowInFlight) {
+                        endGame();
+                    }
+                }, 1000);
+            }
+        }
+        
+        function cancelDraw() {
+            if (gameState.bowDrawn) {
+                gameState.bowDrawn = false;
+                bow.style.backgroundImage = "url('sprites/bow1.png')";
+                arrow.style.display = 'none';
+                
+                if (gameState.drawInterval) {
+                    clearInterval(gameState.drawInterval);
+                }
+            }
+        }
+        
+        // ========== ARROW MOVEMENT ==========
+        function moveArrow() {
+            if (!gameState.arrowInFlight) return;
+            
+            // Update arrow position based on speed and angle
+            gameState.arrowX += Math.cos(gameState.arrowAngle) * gameState.arrowSpeed;
+            gameState.arrowY += Math.sin(gameState.arrowAngle) * gameState.arrowSpeed;
+            
+            // Update arrow position on screen
+            arrow.style.left = `${gameState.arrowX}px`;
+            arrow.style.top = `${gameState.arrowY}px`;
+            
+            // Check for collision with target
+            checkCollision();
+            
+            // Check if arrow is out of bounds
+            const gameRect = gameScreen.getBoundingClientRect();
+            if (gameState.arrowX < 0 || gameState.arrowX > gameRect.width || 
+                gameState.arrowY < 0 || gameState.arrowY > gameRect.height) {
+                gameState.arrowInFlight = false;
+                arrow.style.display = 'none';
+                return;
+            }
+            
+            // Continue arrow flight
+            requestAnimationFrame(moveArrow);
+        }
+        
+        // ========== TARGET FUNCTIONS ==========
+        function resetTarget() {
+            // Set initial target position (random within bounds)
+            const gameRect = gameScreen.getBoundingClientRect();
+            const margin = 100;
+            
+            gameState.targetX = margin + Math.random() * (gameRect.width - 2 * margin - TARGET_SIZE);
+            gameState.targetY = margin + Math.random() * (gameRect.height - 2 * margin - TARGET_SIZE);
+            
+            // Set random initial speed direction
+            gameState.targetSpeedX = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random());
+            gameState.targetSpeedY = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random());
+            
+            updateTargetPosition();
+        }
+        
+        function moveTarget() {
+            if (!gameState.gameActive) return;
+            
+            const gameRect = gameScreen.getBoundingClientRect();
+            const margin = 50;
+            
+            // Update target position
+            gameState.targetX += gameState.targetSpeedX;
+            gameState.targetY += gameState.targetSpeedY;
+            
+            // Bounce off edges
+            if (gameState.targetX < margin || gameState.targetX > gameRect.width - TARGET_SIZE - margin) {
+                gameState.targetSpeedX *= -1;
+                gameState.targetX = Math.max(margin, Math.min(gameState.targetX, gameRect.width - TARGET_SIZE - margin));
+            }
+            
+            if (gameState.targetY < margin || gameState.targetY > gameRect.height - TARGET_SIZE - margin) {
+                gameState.targetSpeedY *= -1;
+                gameState.targetY = Math.max(margin, Math.min(gameState.targetY, gameRect.height - TARGET_SIZE - margin));
+            }
+            
+            updateTargetPosition();
+            
+            // Continue movement
+            requestAnimationFrame(moveTarget);
+        }
+        
+        function updateTargetPosition() {
+            target.style.left = `${gameState.targetX}px`;
+            target.style.top = `${gameState.arrowY}px`;
+        }
+        
+        function increaseDifficulty() {
+            // Increase target speed
+            gameState.targetSpeedX *= 1.3;
+            gameState.targetSpeedY *= 1.3;
+            
+            // Make target slightly smaller
+            const currentSize = parseInt(target.style.width) || TARGET_SIZE;
+            const newSize = Math.max(120, currentSize * 0.9);
+            
+            target.style.width = `${newSize}px`;
+            target.style.height = `${newSize}px`;
+            
+            console.log("Difficulty increased! Target speed:", gameState.targetSpeedX.toFixed(2));
+        }
+        
+        // ========== COLLISION DETECTION ==========
+        function checkCollision() {
+            // Get target center
+            const targetCenterX = gameState.targetX + TARGET_RADIUS;
+            const targetCenterY = gameState.arrowY + TARGET_RADIUS; // Using arrowY for target position
+            
+            // Calculate distance between arrow tip and target center
+            const arrowTipX = gameState.arrowX + 60; // Arrow length is 60px
+            const arrowTipY = gameState.arrowY + 5;  // Arrow height is 10px, so center is at 5px
+            
+            const deltaX = arrowTipX - targetCenterX;
+            const deltaY = arrowTipY - targetCenterY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // Check if arrow hits the target (within target radius)
+            if (distance <= TARGET_RADIUS) {
+                // Calculate score based on distance from center
+                let score = 0;
+                
+                if (distance <= TARGET_RINGS.GOLD.max) {
+                    score = TARGET_RINGS.GOLD.score;
+                    console.log("Bullseye! 50 points");
+                } else if (distance <= TARGET_RINGS.RED.max) {
+                    score = TARGET_RINGS.RED.score;
+                    console.log("Red ring! 30 points");
+                } else if (distance <= TARGET_RINGS.BLUE.max) {
+                    score = TARGET_RINGS.BLUE.score;
+                    console.log("Blue ring! 15 points");
+                } else if (distance <= TARGET_RINGS.BLACK.max) {
+                    score = TARGET_RINGS.BLACK.score;
+                    console.log("Black ring! 10 points");
+                } else if (distance <= TARGET_RINGS.WHITE.max) {
+                    score = TARGET_RINGS.WHITE.score;
+                    console.log("White ring! 5 points");
+                }
+                
+                if (score > 0) {
+                    // Update score
+                    gameState.score += score;
+                    scoreDisplay.textContent = gameState.score;
+                    
+                    // Show hit effect
+                    showHitEffect(arrowTipX, arrowTipY, score);
+                    
+                    // Increase difficulty if score is a multiple of 100
+                    if (gameState.score % 100 === 0) {
+                        increaseDifficulty();
+                    }
+                }
+                
+                // Remove arrow
+                gameState.arrowInFlight = false;
+                arrow.style.display = 'none';
+                
+                // Move target to new random position
+                setTimeout(() => {
+                    resetTarget();
+                }, 300);
+            }
+        }
+        
+        function showHitEffect(x, y, score) {
+            // Create hit effect element
+            const effect = document.createElement('div');
+            effect.textContent = `+${score}`;
+            effect.style.position = 'absolute';
+            effect.style.left = `${x}px`;
+            effect.style.top = `${y}px`;
+            effect.style.color = '#FFD700';
+            effect.style.fontSize = '24px';
+            effect.style.fontWeight = 'bold';
+            effect.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.8)';
+            effect.style.zIndex = '10';
+            effect.style.pointerEvents = 'none';
+            effect.style.animation = 'floatUp 1s forwards';
+            
+            // Add CSS animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes floatUp {
+                    0% { transform: translateY(0); opacity: 1; }
+                    100% { transform: translateY(-50px); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            gameScreen.appendChild(effect);
+            
+            // Remove effect after animation
+            setTimeout(() => {
+                effect.remove();
+                style.remove();
+            }, 1000);
+        }
+        
+        // ========== UI UPDATE FUNCTIONS ==========
+        function updateQuiver() {
+            // Update quiver image based on arrows left
+            let quiverImage = 'bag1.png'; // Full (3 arrows visible)
+            
+            if (gameState.arrowsLeft <= 0) {
+                quiverImage = 'bag4.png'; // Empty
+            } else if (gameState.arrowsLeft <= 5) {
+                quiverImage = 'bag3.png'; // 1 arrow visible
+            } else if (gameState.arrowsLeft <= 10) {
+                quiverImage = 'bag2.png'; // 2 arrows visible
+            }
+            
+            quiver.style.backgroundImage = `url('sprites/${quiverImage}')`;
+        }
+        
+        function updateScore() {
+            scoreDisplay.textContent = gameState.score;
+            
+            // Update high score if needed
+            if (gameState.score > gameState.highScore) {
+                gameState.highScore = gameState.score;
+                highScoreDisplay.textContent = gameState.highScore;
+            }
+        }
+        
+        // ========== MOUSE TRACKING ==========
+        gameScreen.addEventListener('mousemove', (e) => {
+            if (!gameState.gameActive) return;
+            
+            const gameRect = gameScreen.getBoundingClientRect();
+            gameState.lastMouseX = e.clientX - gameRect.left;
+            gameState.lastMouseY = e.clientY - gameRect.top;
+            
+            // Update bow rotation based on mouse position
+            if (gameState.bowDrawn) {
+                const bowRect = bow.getBoundingClientRect();
+                const bowCenterX = bowRect.left + bowRect.width * 0.3 - gameRect.left;
+                const bowCenterY = bowRect.top + bowRect.height * 0.5 - gameRect.top;
+                
+                const deltaX = gameState.lastMouseX - bowCenterX;
+                const deltaY = gameState.lastMouseY - bowCenterY;
+                const angle = Math.atan2(deltaY, deltaX);
+                
+                bow.style.transform = `rotate(${angle}rad)`;
+                
+                // Position arrow at bow with correct angle
+                positionArrowAtBow();
+            }
+        });
+        
+        // ========== INITIALIZE GAME ==========
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>

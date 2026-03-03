@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Precision Shot</title>
+<link rel="icon" href="sprites/favicon.png">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: url("sprites/bg-game.png") center/cover no-repeat;
+    overflow: hidden;
+}
+
+/* UI */
+#ui {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    color: white;
+    font-size: 18px;
+}
+
+#quiver {
+    width: 80px;
+}
+
+/* Bow */
+#bow {
+    position: absolute;
+    bottom: 60px;
+    left: 50px;
+    width: 200px;
+}
+
+/* Arrow */
+#arrow {
+    position: absolute;
+    width: 120px;
+    left: 210px;
+    bottom: 130px;
+    display: none;
+}
+
+/* Target */
+#target {
+    position: absolute;
+    right: 80px;
+    top: 200px;
+    width: 260px;
+}
+
+/* Game Over */
+#gameOver {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#gameOver button {
+    background: url("sprites/button.png") center/cover;
+    border: none;
+    width: 200px;
+    height: 60px;
+    font-size: 18px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+    <div>Score: <span id="score">0</span></div>
+    <div>Time: <span id="time">60</span>s</div>
+    <img id="quiver" src="sprites/bag1.png">
+</div>
+
+<img id="bow" src="sprites/bow1.png">
+<img id="arrow" src="sprites/arrow.png">
+<img id="target" src="sprites/target.png">
+
+<div id="gameOver">
+    <h1>Game Over</h1>
+    <p>Final Score: <span id="finalScore"></span></p>
+    <button onclick="restartGame()">Restart</button>
+</div>
+
+<script>
+/* ------------------ GAME STATE ------------------ */
+let score = 0;
+let timeLeft = 60;
+let arrowsLeft = 15;
+let gameOver = false;
+
+let bowFrame = 1;
+let drawing = false;
+let targetDirection = 1;
+let targetSpeed = 2;
+
+/* ------------------ ELEMENTS ------------------ */
+const bow = document.getElementById("bow");
+const arrow = document.getElementById("arrow");
+const target = document.getElementById("target");
+const scoreEl = document.getElementById("score");
+const timeEl = document.getElementById("time");
+const quiver = document.getElementById("quiver");
+const gameOverScreen = document.getElementById("gameOver");
+
+/* ------------------ TIMER ------------------ */
+function startTimer() {
+    const timer = setInterval(() => {
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            endGame();
+        }
+        timeLeft--;
+        timeEl.textContent = timeLeft;
+        increaseDifficulty();
+    }, 1000);
+}
+
+/* ------------------ TARGET MOVEMENT ------------------ */
+function moveTarget() {
+    if (gameOver) return;
+
+    let top = target.offsetTop;
+    top += targetSpeed * targetDirection;
+
+    if (top <= 120 || top >= 420) targetDirection *= -1;
+
+    target.style.top = top + "px";
+    requestAnimationFrame(moveTarget);
+}
+
+/* ------------------ DRAW BOW ------------------ */
+document.addEventListener("mousedown", () => {
+    if (arrowsLeft <= 0 || gameOver) return;
+    drawing = true;
+
+    const drawInterval = setInterval(() => {
+        if (!drawing || bowFrame === 6) {
+            clearInterval(drawInterval);
+            return;
+        }
+        bowFrame++;
+        bow.src = `sprites/bow${bowFrame}.png`;
+    }, 80);
+});
+
+document.addEventListener("mouseup", () => {
+    if (!drawing || arrowsLeft <= 0) return;
+    drawing = false;
+    shootArrow();
+});
+
+/* ------------------ SHOOT ------------------ */
+function shootArrow() {
+    arrowsLeft--;
+    updateQuiver();
+
+    arrow.style.display = "block";
+    arrow.style.left = "210px";
+    arrow.style.bottom = "130px";
+
+    let x = 210;
+
+    const flight = setInterval(() => {
+        x += 18;
+        arrow.style.left = x + "px";
+
+        if (x >= target.offsetLeft) {
+            clearInterval(flight);
+            arrow.style.display = "none";
+            checkHit();
+        }
+    }, 16);
+
+    bowFrame = 1;
+    bow.src = "sprites/bow1.png";
+}
+
+/* ------------------ HIT DETECTION ------------------ */
+function checkHit() {
+    const arrowY = arrow.getBoundingClientRect().top;
+    const targetY = target.getBoundingClientRect().top;
+
+    const hitPos = arrowY - targetY;
+
+    let points = 0;
+
+    if (hitPos >= 249 && hitPos < 385) points = 50;
+    else if ((hitPos >= 182 && hitPos < 249) || (hitPos >= 385 && hitPos < 451)) points = 30;
+    else if ((hitPos >= 115 && hitPos < 182) || (hitPos >= 451 && hitPos < 519)) points = 15;
+    else if ((hitPos >= 54 && hitPos < 115) || (hitPos >= 519 && hitPos < 579)) points = 10;
+    else if ((hitPos >= 0 && hitPos < 54) || (hitPos >= 579 && hitPos < 634)) points = 5;
+
+    score += points;
+    scoreEl.textContent = score;
+}
+
+/* ------------------ QUIVER ------------------ */
+function updateQuiver() {
+    if (arrowsLeft >= 11) quiver.src = "sprites/bag1.png";
+    else if (arrowsLeft >= 6) quiver.src = "sprites/bag2.png";
+    else if (arrowsLeft >= 1) quiver.src = "sprites/bag3.png";
+    else quiver.src = "sprites/bag4.png";
+}
+
+/* ------------------ DIFFICULTY ------------------ */
+function increaseDifficulty() {
+    if (timeLeft % 10 === 0) targetSpeed += 0.3;
+}
+
+/* ------------------ GAME OVER ------------------ */
+function endGame() {
+    gameOver = true;
+    gameOverScreen.style.display = "flex";
+    document.getElementById("finalScore").textContent = score;
+}
+
+/* ------------------ RESTART ------------------ */
+function restartGame() {
+    location.reload();
+}
+
+/* ------------------ START ------------------ */
+startTimer();
+moveTarget();
+</script>
+
+</body>
+</html>

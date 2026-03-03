@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Precision Shot</title>
+  <link rel="icon" href="sprites/favicon.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Main Menu -->
+  <div id="main-menu" class="screen active">
+    <img src="sprites/logo.png" alt="Precision Shot Logo" class="logo">
+    <div class="menu-bg"></div>
+    <button id="btn-start" class="btn">START</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen">
+    <div id="ui">
+      <div id="score-display">Score: <span id="score">0</span></div>
+      <div id="timer-display">Time: <span id="time-left">60</span>s</div>
+      <div id="ammo-display">
+        <img id="quiver" src="sprites/bag1.png" alt="Quiver">
+      </div>
+    </div>
+
+    <div id="game-area">
+      <div id="background"></div>
+      <div id="bow-container">
+        <div id="bow" class="bow"></div>
+      </div>
+      <div id="target" class="target"></div>
+      <div id="arrow" class="arrow"></div>
+    </div>
+
+    <div id="game-over" class="overlay hidden">
+      <h2>GAME OVER</h2>
+      <p>Your final score: <span id="final-score">0</span></p>
+      <button id="btn-restart">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

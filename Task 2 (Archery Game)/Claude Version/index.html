@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Shot - Archery Game</title>
+    <link rel="icon" type="image/png" href="sprites/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main Menu Screen -->
+    <div id="main-menu" class="screen active">
+        <div class="menu-content">
+            <img src="sprites/logo.png" alt="Precision Shot" class="logo">
+            <div class="menu-buttons">
+                <button class="game-button" id="start-btn">
+                    <span>START GAME</span>
+                </button>
+                <button class="game-button" id="how-to-btn">
+                    <span>HOW TO PLAY</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- How to Play Screen -->
+    <div id="how-to-screen" class="screen">
+        <div class="menu-content">
+            <h2 class="how-to-title">How to Play</h2>
+            <div class="instructions">
+                <img src="sprites/target_scores.png" alt="Target Scores" class="target-guide">
+                <div class="instruction-text">
+                    <p><strong>Click anywhere</strong> to shoot an arrow at the moving target!</p>
+                    <p><strong>Hit the target</strong> to score points based on where you hit:</p>
+                    <ul>
+                        <li>🎯 Gold Center: <strong>50 points</strong></li>
+                        <li>🔴 Red Ring: <strong>30 points</strong></li>
+                        <li>🔵 Blue Ring: <strong>15 points</strong></li>
+                        <li>⚫ Black Ring: <strong>10 points</strong></li>
+                        <li>⚪ White Ring: <strong>5 points</strong></li>
+                    </ul>
+                    <p>You have <strong>60 seconds</strong> and <strong>3 arrows</strong>!</p>
+                    <p>The target gets <strong>faster and smaller</strong> as you score!</p>
+                </div>
+            </div>
+            <button class="game-button" id="back-btn">
+                <span>BACK</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <!-- Game HUD -->
+        <div class="hud">
+            <div class="hud-left">
+                <div class="score-display">
+                    <span class="label">SCORE</span>
+                    <span class="value" id="score-value">0</span>
+                </div>
+            </div>
+            <div class="hud-center">
+                <div class="timer-display">
+                    <span class="label">TIME</span>
+                    <span class="value" id="timer-value">60</span>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="ammo-display">
+                    <span class="label">ARROWS</span>
+                    <img src="sprites/bag1.png" alt="Ammo" id="ammo-img" class="ammo-icon">
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div id="game-area">
+            <!-- Target -->
+            <div id="target" class="target">
+                <img src="sprites/target.png" alt="Target">
+            </div>
+
+            <!-- Bow -->
+            <div id="bow" class="bow">
+                <img src="sprites/bow1.png" alt="Bow" id="bow-img">
+            </div>
+
+            <!-- Arrows Container -->
+            <div id="arrows-container"></div>
+        </div>
+
+        <!-- Score Popup -->
+        <div id="score-popup" class="score-popup"></div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="screen">
+        <div class="menu-content game-over-content">
+            <h2 class="game-over-title">GAME OVER</h2>
+            <div class="final-score-display">
+                <span class="label">FINAL SCORE</span>
+                <span class="value" id="final-score-value">0</span>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Hits</span>
+                    <span class="stat-value" id="hits-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Accuracy</span>
+                    <span class="stat-value" id="accuracy-value">0%</span>
+                </div>
+            </div>
+            <div class="menu-buttons">
+                <button class="game-button" id="play-again-btn">
+                    <span>PLAY AGAIN</span>
+                </button>
+                <button class="game-button" id="main-menu-btn">
+                    <span>MAIN MENU</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
