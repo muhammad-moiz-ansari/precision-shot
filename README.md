@@ -81,12 +81,14 @@ A dynamic archery game built with HTML, CSS, and JavaScript featuring moving tar
 ## 📁 File Structure
 
 ```
-archery-game/
-├── index.html          # Main HTML structure
-├── styles.css          # Styling with distinctive natural/outdoor theme
-├── script.js           # Game logic and mechanics
-├── README.md           # This file
-└── sprites/            # Game assets (NOT INCLUDED - you must provide)
+precision-shot/
+├── index.html            # Main Menu screen
+├── game.html             # Core game logic, UI, and event listeners
+├── style.css             # Global styling and animations
+├── script.js             # Game logic and mechanics
+├── project_document.pdf  # Official project report/documentation
+├── README.md             # Project overview and instructions
+└── sprites/              # Game assets and UI images
     ├── logo.png
     ├── favicon.png
     ├── bg-main.jpg
@@ -137,26 +139,3 @@ The game uses the target.png measurements to calculate accurate scoring:
 2. Add all required sprite images (listed in File Structure)
 3. Open `index.html` in a modern web browser
 4. Click "START GAME" and enjoy!
-
-## 📝 Code Quality Highlights
-
-✅ **Well-structured**: Modular functions with single responsibilities  
-✅ **Maintainable**: Clear variable names and consistent coding style  
-✅ **Efficient**: Optimized animations using requestAnimationFrame  
-✅ **Robust**: Error-free reset and restart functionality  
-✅ **Professional**: Production-ready code with comments and documentation  
-
-## 🎯 Grading Criteria Met
-
-| Criteria | Status | Details |
-|----------|--------|---------|
-| DOM Element & Object Usage | ✅ 1/1 | Modern methods, no hard-coding |
-| Event Handling Logic | ✅ 1/1 | Efficient listeners, prevents bubbling |
-| Function & Code Structure | ✅ 3/3 | Modular, well-named, no duplication |
-| Game Logic & State | ✅ 3/3 | Clean state management, bug-free |
-| Dynamic Styling & Difficulty | ✅ 2/2 | Smooth difficulty progression |
-| **TOTAL** | **✅ 10/10** | All criteria exceeded |
-
----
-
-**Made with precision and attention to detail** 🏹
