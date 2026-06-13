@@ -1,3 +1,0 @@
-+ add icon
-+ add bow stretch power
-- Add AI vs You Report
